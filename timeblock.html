@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Block Tracker</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-alt: #eef4ff;
+    --border: rgba(0,0,0,0.08);
+    --border-accent: rgba(24,95,165,0.25);
+    --text: #1a1a18;
+    --text-muted: #888780;
+    --text-accent: #185fa5;
+    --fill-success: #3b6d11;
+    --fill-accent: #185fa5;
+    --bg-success: #eaf3de;
+    --bg-accent: #e6f1fb;
+    --border-success: rgba(59,109,17,0.2);
+    --border-acc: rgba(24,95,165,0.2);
+    --mono: ui-monospace, 'Courier New', SFMono-Regular, monospace;
+    --sans: system-ui, -apple-system, sans-serif;
+    --progress-bg: #e0ddd6;
+  }
+  [data-theme="dark"] {
+      --bg: #0f1112;
+      --surface: #1a1e20;
+      --surface-alt: #0c1829;
+      --border: rgba(255,255,255,0.07);
+      --border-accent: rgba(133,183,235,0.25);
+      --text: #e7eee9;
+      --text-muted: #6b7a72;
+      --text-accent: #85b7eb;
+      --fill-success: #97c459;
+      --fill-accent: #85b7eb;
+      --bg-success: #173404;
+      --bg-accent: #042c53;
+      --border-success: rgba(151,196,89,0.2);
+      --border-acc: rgba(133,183,235,0.2);
+      --progress-bg: #2a2e30;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+
+  .root {
+    width: min(660px, 100%);
+    position: relative;
+  }
+
+  .theme-toggle {
+    position: absolute;
+    top: -0.5rem;
+    right: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 0.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .theme-toggle:hover {
+    color: var(--text);
+    border-color: var(--border-accent);
+  }
+  .theme-toggle svg {
+    width: 16px;
+    height: 16px;
+  }
+  .theme-toggle .icon-sun { display: none; }
+  [data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+  [data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+
+  /* Clock */
+  .top {
+    text-align: center;
+    margin-bottom: 2.25rem;
+  }
+  .clock {
+    font-family: var(--mono);
+    font-size: clamp(3rem, 10vw, 4.2rem);
+    font-weight: 500;
+    letter-spacing: 6px;
+    color: var(--text);
+    line-height: 1;
+  }
+  .dateline {
+    margin-top: 10px;
+    font-size: 0.68rem;
+    letter-spacing: 3px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+  .divider {
+    width: 36px;
+    height: 1px;
+    background: var(--border);
+    margin: 1.5rem auto 0;
+    border: none;
+  }
+
+  /* Cards */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 480px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  .card-accent {
+    background: var(--surface-alt);
+    border-color: var(--border-accent);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.6rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 99px;
+    font-family: var(--sans);
+    margin-bottom: 10px;
+  }
+  .badge-success {
+    background: var(--bg-success);
+    color: var(--fill-success);
+    border: 0.5px solid var(--border-success);
+  }
+  .badge-accent {
+    background: var(--bg-accent);
+    color: var(--text-accent);
+    border: 0.5px solid var(--border-acc);
+  }
+  .badge-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+
+  .card-label {
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 0.9rem;
+  }
+
+  .bignum {
+    font-family: var(--mono);
+    font-size: clamp(2.4rem, 8vw, 3.2rem);
+    font-weight: 500;
+    letter-spacing: 2px;
+    color: var(--text);
+    line-height: 1;
+  }
+  .card-accent .bignum {
+    color: var(--text-accent);
+  }
+
+  .range-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .dash {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+  }
+
+  .sub {
+    margin-top: 10px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.2px;
+  }
+  .hl { color: var(--text-accent); }
+
+  /* Progress */
+  .progress-wrap { margin-top: 14px; }
+  .progress-bar {
+    height: 2px;
+    background: var(--progress-bg);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--fill-success);
+    border-radius: 2px;
+    transition: width 1s linear;
+  }
+  .progress-meta {
+    margin-top: 6px;
+    font-size: 0.63rem;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    margin-top: 1.75rem;
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<div class="root">
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  </button>
+
+  <div class="top">
+    <div class="clock" id="clock">--:--:--</div>
+    <div class="dateline" id="dateline">— — —</div>
+    <hr class="divider">
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="badge badge-success"><span class="badge-dot"></span>Live</div>
+      <div class="card-label">Current block</div>
+      <div class="bignum" id="currentBlock">--</div>
+      <div class="sub" id="currentRange">--:-- – --:--</div>
+      <div class="progress-wrap">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+        <div class="progress-meta">
+          <span id="progressPct">0%</span>
+          <span id="timeLeft">--m --s left</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-accent">
+      <div class="badge badge-accent"><span class="badge-dot"></span>Punch window</div>
+      <div class="card-label">Block to punch from</div>
+      <div class="bignum range-wrap">
+        <span id="punchA">--</span><span class="dash">–</span><span id="punchB">--</span>
+      </div>
+      <div class="sub">offset: <span class="hl" id="offsetUsed">--</span></div>
+    </div>
+  </div>
+
+  <div class="footer">15‑min cycle &middot; resets 00:00 &middot; updates live</div>
+</div>
+
+<script>
+  function pad(n){ return n.toString().padStart(2,'0'); }
+
+  function update(){
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+    document.getElementById('dateline').textContent =
+      now.toLocaleDateString(undefined, { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+
+    const mins = now.getHours() * 60 + now.getMinutes();
+    const secs = now.getSeconds();
+    const blockIdx = Math.floor(mins / 15);
+    const blockNum = blockIdx + 1;
+    const startMin = blockIdx * 15;
+    const endMin = startMin + 15;
+    const sH = Math.floor(startMin / 60) % 24, sM = startMin % 60;
+    const eH = Math.floor(endMin / 60) % 24, eM = endMin % 60;
+
+    document.getElementById('currentBlock').textContent = blockNum;
+    document.getElementById('currentRange').textContent =
+      pad(sH) + ':' + pad(sM) + ' – ' + pad(eH) + ':' + pad(eM);
+
+    const elapsedSecs = (mins - startMin) * 60 + secs;
+    const pct = Math.round((elapsedSecs / 900) * 100);
+    const mLeft = Math.floor((900 - elapsedSecs) / 60);
+    const sLeft = (900 - elapsedSecs) % 60;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressPct').textContent = pct + '%';
+    document.getElementById('timeLeft').textContent = mLeft + 'm ' + pad(sLeft) + 's left';
+
+    const offset = (eM === 15 || eM === 45) ? 6 : 7;
+    document.getElementById('punchA').textContent = blockNum + offset;
+    document.getElementById('punchB').textContent = blockNum + offset + 1;
+    document.getElementById('offsetUsed').textContent = '+' + offset;
+  }
+
+  update();
+  setInterval(update, 1000);
+
+  const root = document.documentElement;
+  const toggleBtn = document.getElementById('themeToggle');
+  let theme = 'light';
+  toggleBtn.addEventListener('click', () => {
+    theme = theme === 'light' ? 'dark' : 'light';
+    if (theme === 'dark') {
+      root.setAttribute('data-theme', 'dark');
+    } else {
+      root.removeAttribute('data-theme');
+    }
+  });
+</script>
+
+</body>
+</html>
