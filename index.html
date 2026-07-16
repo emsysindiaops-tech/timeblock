@@ -9,17 +9,22 @@
     --bg: #ffffff;
     --surface: #ffffff;
     --surface-alt: #eef4ff;
+    --surface-warn: #fff6e9;
     --border: rgba(0,0,0,0.08);
     --border-accent: rgba(24,95,165,0.25);
+    --border-warn: rgba(178,110,10,0.25);
     --text: #1a1a18;
     --text-muted: #888780;
     --text-accent: #185fa5;
+    --text-warn: #966006;
     --fill-success: #3b6d11;
     --fill-accent: #185fa5;
     --bg-success: #eaf3de;
     --bg-accent: #e6f1fb;
+    --bg-warn: #fbecd2;
     --border-success: rgba(59,109,17,0.2);
     --border-acc: rgba(24,95,165,0.2);
+    --border-warn2: rgba(178,110,10,0.2);
     --mono: ui-monospace, 'Courier New', SFMono-Regular, monospace;
     --sans: system-ui, -apple-system, sans-serif;
     --progress-bg: #e0ddd6;
@@ -28,17 +33,22 @@
       --bg: #0f1112;
       --surface: #1a1e20;
       --surface-alt: #0c1829;
+      --surface-warn: #241a08;
       --border: rgba(255,255,255,0.07);
       --border-accent: rgba(133,183,235,0.25);
+      --border-warn: rgba(224,163,64,0.25);
       --text: #e7eee9;
       --text-muted: #6b7a72;
       --text-accent: #85b7eb;
+      --text-warn: #e0a340;
       --fill-success: #97c459;
       --fill-accent: #85b7eb;
       --bg-success: #173404;
       --bg-accent: #042c53;
+      --bg-warn: #3a2a08;
       --border-success: rgba(151,196,89,0.2);
       --border-acc: rgba(133,183,235,0.2);
+      --border-warn2: rgba(224,163,64,0.2);
       --progress-bg: #2a2e30;
   }
 
@@ -56,7 +66,7 @@
   }
 
   .root {
-    width: min(660px, 100%);
+    width: min(700px, 100%);
     position: relative;
   }
 
@@ -116,16 +126,17 @@
     border: none;
   }
 
-  /* Cards */
-  .grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
+  /* Section label */
+  .section-label {
+    font-size: 0.62rem;
+    letter-spacing: 2.5px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin: 1.75rem 0 0.6rem 2px;
   }
-  @media (max-width: 480px) {
-    .grid { grid-template-columns: 1fr; }
-  }
+  .section-label:first-of-type { margin-top: 0; }
 
+  /* Cards */
   .card {
     background: var(--surface);
     border: 0.5px solid var(--border);
@@ -135,6 +146,32 @@
   .card-accent {
     background: var(--surface-alt);
     border-color: var(--border-accent);
+  }
+  .card-warn {
+    background: var(--surface-warn);
+    border-color: var(--border-warn);
+  }
+
+  /* Current block: single prominent card */
+  .current-card {
+    padding: 1.5rem 1.5rem 1.35rem;
+  }
+  .current-top-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  /* Punch windows: two cards side by side */
+  .punch-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 480px) {
+    .punch-grid { grid-template-columns: 1fr; }
   }
 
   .badge {
@@ -158,6 +195,11 @@
     background: var(--bg-accent);
     color: var(--text-accent);
     border: 0.5px solid var(--border-acc);
+  }
+  .badge-warn {
+    background: var(--bg-warn);
+    color: var(--text-warn);
+    border: 0.5px solid var(--border-warn2);
   }
   .badge-dot {
     width: 5px;
@@ -183,8 +225,14 @@
     color: var(--text);
     line-height: 1;
   }
-  .card-accent .bignum {
-    color: var(--text-accent);
+  .card-accent .bignum,
+  .card-accent .range-wrap { color: var(--text-accent); }
+  .card-warn .bignum,
+  .card-warn .range-wrap { color: var(--text-warn); }
+
+  /* Smaller variant used in the side-by-side punch cards */
+  .bignum-sm {
+    font-size: clamp(1.7rem, 6vw, 2.15rem);
   }
 
   .range-wrap {
@@ -203,7 +251,7 @@
     color: var(--text-muted);
     letter-spacing: 0.2px;
   }
-  .hl { color: var(--text-accent); }
+  .hl { color: inherit; font-weight: 600; }
 
   /* Progress */
   .progress-wrap { margin-top: 14px; }
@@ -252,30 +300,47 @@
     <hr class="divider">
   </div>
 
-  <div class="grid">
-    <div class="card">
-      <div class="badge badge-success"><span class="badge-dot"></span>Live</div>
-      <div class="card-label">Current block</div>
-      <div class="bignum" id="currentBlock">--</div>
-      <div class="sub" id="currentRange">--:-- – --:--</div>
-      <div class="progress-wrap">
-        <div class="progress-bar">
-          <div class="progress-fill" id="progressFill" style="width:0%"></div>
-        </div>
-        <div class="progress-meta">
-          <span id="progressPct">0%</span>
-          <span id="timeLeft">--m --s left</span>
-        </div>
+  <!-- Current block: full-width, prominent -->
+  <div class="card current-card">
+    <div class="current-top-row">
+      <div>
+        <div class="badge badge-success"><span class="badge-dot"></span>Live</div>
+        <div class="card-label">Current block</div>
+        <div class="bignum" id="currentBlock">--</div>
+        <div class="sub" id="currentRange">--:-- – --:--</div>
       </div>
     </div>
+    <div class="progress-wrap">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+      <div class="progress-meta">
+        <span id="progressPct">0%</span>
+        <span id="timeLeft">--m --s left</span>
+      </div>
+    </div>
+  </div>
 
+  <div class="section-label">Punch windows</div>
+
+  <!-- Current + upcoming punch windows, side by side -->
+  <div class="punch-grid">
     <div class="card card-accent">
-      <div class="badge badge-accent"><span class="badge-dot"></span>Punch window</div>
+      <div class="badge badge-accent"><span class="badge-dot"></span>Punch now</div>
       <div class="card-label">Block to punch from</div>
-      <div class="bignum range-wrap">
+      <div class="bignum bignum-sm range-wrap">
         <span id="punchA">--</span><span class="dash">–</span><span id="punchB">--</span>
       </div>
       <div class="sub">offset: <span class="hl" id="offsetUsed">--</span></div>
+    </div>
+
+    <div class="card card-warn">
+      <div class="badge badge-warn"><span class="badge-dot"></span>Upcoming</div>
+      <div class="card-label">Next punch window</div>
+      <div class="bignum bignum-sm range-wrap">
+        <span id="nextPunchA">--</span><span class="dash">–</span><span id="nextPunchB">--</span>
+      </div>
+      <div class="sub">opens in <span class="hl" id="nextPunchIn">--</span></div>
     </div>
   </div>
 
@@ -284,6 +349,11 @@
 
 <script>
   function pad(n){ return n.toString().padStart(2,'0'); }
+
+  // Given a block's end-minute-of-hour, returns the punch offset used by this scheme.
+  function punchOffsetFor(endMinuteOfHour){
+    return (endMinuteOfHour === 15 || endMinuteOfHour === 45) ? 6 : 7;
+  }
 
   function update(){
     const now = new Date();
@@ -313,10 +383,21 @@
     document.getElementById('progressPct').textContent = pct + '%';
     document.getElementById('timeLeft').textContent = mLeft + 'm ' + pad(sLeft) + 's left';
 
-    const offset = (eM === 15 || eM === 45) ? 6 : 7;
+    // Current punch window
+    const offset = punchOffsetFor(eM);
     document.getElementById('punchA').textContent = blockNum + offset;
     document.getElementById('punchB').textContent = blockNum + offset + 1;
     document.getElementById('offsetUsed').textContent = '+' + offset;
+
+    // Upcoming punch window (based on the next 15-min block)
+    const nextBlockIdx = blockIdx + 1;
+    const nextBlockNum = nextBlockIdx + 1;
+    const nextEndMin = (nextBlockIdx * 15) + 15;
+    const nextEM = nextEndMin % 60;
+    const nextOffset = punchOffsetFor(nextEM);
+    document.getElementById('nextPunchA').textContent = nextBlockNum + nextOffset;
+    document.getElementById('nextPunchB').textContent = nextBlockNum + nextOffset + 1;
+    document.getElementById('nextPunchIn').textContent = mLeft + 'm ' + pad(sLeft) + 's';
   }
 
   update();
